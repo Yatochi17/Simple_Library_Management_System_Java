@@ -49,4 +49,48 @@ public class LibraryService {
             e.printStackTrace();
         }
     }
+
+    public void issueBook() {
+        try (Connection conn = DB_Connect.getConnection();
+        Scanner scanner = new Scanner(System.in)) {
+
+            System.out.print("Enter book ID to issue: ");
+            int bookId = scanner.nextInt();
+            scanner.nextLine();
+
+            System.out.print("Enter user ID: ");
+            int userId = scanner.nextInt();
+
+            //check if the book is available
+            String checkQuery = "SELECT is_issued FROM books WHERE id = ?";
+            PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
+            checkStmt.setInt(1, bookId);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next() && rs.getBoolean("is_issued")) {
+                System.out.println("Book is already issued!");
+                return;
+            }
+
+            //issue the book
+            String issueQuery = "INSERT INTO issued_books (book_id, user_id, issue_date) VALUES (?, ?, CURDATE())";
+            PreparedStatement issueStmt = conn.prepareStatement(issueQuery);
+            issueStmt.setInt(1, bookId);
+            issueStmt.setInt(2, userId);
+            issueStmt.executeUpdate();
+
+            //Update book status
+            String updateQuery = "UPDATE books SET is_issued = TRUE WHERE id = ?";
+            PreparedStatement updateStmt = conn.prepareStatement(updateQuery);
+            updateStmt.setInt(1, bookId);
+            updateStmt.executeUpdate();
+
+            System.out.println("Book issued successfully!");
+        }
+
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
 }
